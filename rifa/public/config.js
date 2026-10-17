@@ -1,7 +1,7 @@
 // ====== EDITA ESTO CON LOS DATOS REALES ======
 window.RIFA = {
-  titulo: "Rifa solidaria",
-  causa: "Todo lo recaudado va para cubrir los tratamientos médicos de alto costo de su mamá. Cada número suma. ¡Gracias por ayudar!",
+  titulo: "Rifa solidaria Elena San Martín",
+  causa: "Todo lo recaudado va a cubrir sus tratamientos. Cada número suma. ¡Gracias por ayudar!",
   precio: 5000,                 // precio por número, en pesos
   premio: "1° $300.000 · 2° $200.000 · 3° $100.000",
   fechaSorteo: "30 de noviembre",
