@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin rifa</title>
+<style>
+  body{margin:0;font-family:system-ui,sans-serif;background:#faf6f1;color:#2a211c}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 16px}
+  h1{margin:0 0 16px}
+  input,button{font:inherit;padding:9px 12px;border-radius:8px;border:1px solid #e7dcd3}
+  button{cursor:pointer;background:#fff}
+  .ok{background:#16a34a;color:#fff;border:none}
+  .del{color:#b91c1c}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+  .stats div{background:#fff;border-radius:10px;padding:10px 14px}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
+  th,td{padding:10px;text-align:left;border-bottom:1px solid #f0e8e1;font-size:14px}
+  tr.si td{background:#f0fdf4}
+  .tag{font-size:12px;padding:3px 8px;border-radius:99px;background:#fde68a}
+  tr.si .tag{background:#bbf7d0}
+  .scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Panel de la rifa</h1>
+  <div id="login">
+    <input id="clave" type="password" placeholder="Clave de admin">
+    <button onclick="entrar()">Entrar</button>
+  </div>
+  <div id="panel" hidden>
+    <div class="stats" id="stats"></div>
+    <input id="filtro" placeholder="Filtrar por nombre o número" oninput="pintar()" style="width:100%;margin-bottom:12px">
+    <div class="scroll"><table><thead><tr><th>N°</th><th>Nombre</th><th>Teléfono</th><th>Fecha</th><th>Estado</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+  </div>
+</div>
+<script>
+let KEY = sessionStorage.getItem("k") || "", LISTA = [];
+const pad = n => String(n).padStart(3,"0");
+async function api(accion, numero) {
+  const r = await fetch("/api?accion=" + accion, {
+    method: numero === undefined ? "GET" : "POST",
+    headers: { "x-admin-key": KEY, "content-type": "application/json" },
+    body: numero === undefined ? undefined : JSON.stringify({ numero })
+  });
+  if (r.status === 401) { sessionStorage.removeItem("k"); alert("Clave incorrecta"); throw 0; }
+  return r.json();
+}
+async function entrar() {
+  KEY = KEY || document.getElementById("clave").value;
+  const d = await api("admin");
+  sessionStorage.setItem("k", KEY);
+  LISTA = d.lista;
+  document.getElementById("login").hidden = true;
+  document.getElementById("panel").hidden = false;
+  pintar();
+}
+function pintar() {
+  const q = document.getElementById("filtro").value.toLowerCase();
+  const conf = LISTA.filter(x => x.confirmado).length;
+  document.getElementById("stats").innerHTML =
+    `<div>Reservados: <b>${LISTA.length}</b></div><div>Confirmados: <b>${conf}</b></div><div>Por revisar: <b>${LISTA.length-conf}</b></div>
+     <div>Recaudado (confirmado): <b>$${(conf * (window.PRECIO||0)).toLocaleString("es-CL")}</b></div>`;
+  document.getElementById("tb").innerHTML = LISTA
+    .filter(x => !q || x.nombre.toLowerCase().includes(q) || pad(x.numero).includes(q))
+    .map(x => `<tr class="${x.confirmado?'si':''}">
+      <td><b>${pad(x.numero)}</b></td><td>${esc(x.nombre)}</td><td>${esc(x.telefono||"")}</td>
+      <td>${new Date(x.fecha).toLocaleString("es-CL")}</td>
+      <td><span class="tag">${x.confirmado?'Pagado':'Por revisar'}</span></td>
+      <td style="white-space:nowrap">
+        ${x.confirmado ? `<button onclick="acc('desconfirmar',${x.numero})">Deshacer</button>`
+                       : `<button class="ok" onclick="acc('confirmar',${x.numero})">Confirmar</button>`}
+        <button class="del" onclick="if(confirm('¿Liberar el ${pad(x.numero)}? Volverá a estar disponible.'))acc('liberar',${x.numero})">Liberar</button>
+      </td></tr>`).join("");
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function acc(a, n) { await api(a, n); LISTA = (await api("admin")).lista; pintar(); }
+if (KEY) entrar().catch(()=>{});
+</script>
+<script src="config.js"></script>
+<script>window.PRECIO = window.RIFA && window.RIFA.precio;</script>
+</body>
+</html>

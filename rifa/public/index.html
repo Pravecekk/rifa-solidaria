@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rifa solidaria</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+  :root{--bg:#faf6f1;--card:#fff;--ink:#2a211c;--muted:#7a6b62;--accent:#c2410c;--accent-2:#fde7da;
+        --libre:#fff;--libre-b:#e7dcd3;--res:#fde68a;--res-b:#eab308;--pag:#d6d3d1;--pag-ink:#a8a29e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+  header{max-width:900px;margin:0 auto;padding:32px 16px 8px;text-align:center}
+  h1{font-family:Fraunces,serif;font-weight:800;font-size:clamp(28px,6vw,44px);margin:0 0 8px}
+  .causa{color:var(--muted);max-width:560px;margin:0 auto 16px;line-height:1.5}
+  .info{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+  .pill{background:var(--card);border:1px solid var(--libre-b);border-radius:999px;padding:8px 14px;font-size:14px}
+  .pill b{color:var(--accent)}
+  .barra{max-width:420px;margin:0 auto;height:10px;background:var(--libre-b);border-radius:99px;overflow:hidden}
+  .barra i{display:block;height:100%;background:var(--accent);width:0;transition:width .6s}
+  .progreso{font-size:13px;color:var(--muted);margin-top:6px}
+  .tools{max-width:900px;margin:18px auto 10px;padding:0 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .tools input{flex:1;min-width:160px;padding:10px 12px;border:1px solid var(--libre-b);border-radius:10px;font:inherit}
+  .leyenda{display:flex;gap:12px;font-size:13px;color:var(--muted)}
+  .leyenda span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1px solid var(--libre-b);background:var(--libre)}
+  .leyenda .r::before{background:var(--res);border-color:var(--res-b)}
+  .leyenda .p::before{background:var(--pag)}
+  main{max-width:900px;margin:0 auto;padding:0 16px 48px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px}
+  .n{aspect-ratio:1;border:1px solid var(--libre-b);background:var(--libre);border-radius:8px;font:600 14px Inter;color:var(--ink);cursor:pointer;transition:transform .1s,background .15s}
+  .n:hover:not(:disabled){transform:scale(1.08);background:var(--accent-2);border-color:var(--accent)}
+  .n.r{background:var(--res);border-color:var(--res-b);cursor:not-allowed}
+  .n.p{background:var(--pag);color:var(--pag-ink);text-decoration:line-through;cursor:not-allowed;border-color:var(--pag)}
+  .n.oculto{display:none}
+  dialog{border:none;border-radius:18px;padding:0;max-width:420px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  dialog::backdrop{background:rgba(40,25,15,.55)}
+  .modal{padding:24px}
+  .big{font-family:Fraunces,serif;font-size:48px;font-weight:800;color:var(--accent);text-align:center;margin:0}
+  .sub{text-align:center;color:var(--muted);margin:2px 0 16px}
+  .banco{background:var(--bg);border-radius:12px;padding:14px 16px;font-size:14px}
+  .banco div{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--libre-b)}
+  .banco div:last-child{border:none}
+  .banco span{color:var(--muted)}
+  .copiar{width:100%;margin-top:8px;background:none;border:1px solid var(--libre-b);border-radius:10px;padding:9px;font:500 14px Inter;cursor:pointer}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+  .modal input{width:100%;padding:11px 12px;border:1px solid var(--libre-b);border-radius:10px;font:inherit}
+  .acciones{display:flex;gap:8px;margin-top:18px}
+  .btn{flex:1;padding:13px;border:none;border-radius:12px;font:600 15px Inter;cursor:pointer}
+  .btn.primario{background:var(--accent);color:#fff}
+  .btn.sec{background:var(--bg);color:var(--ink)}
+  .btn:disabled{opacity:.6}
+  .msg{font-size:14px;margin-top:10px;text-align:center;min-height:20px}
+  .msg.error{color:#b91c1c}
+  .exito{text-align:center;padding:8px 0}
+  .exito h2{font-family:Fraunces,serif;margin:6px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="titulo">Rifa solidaria</h1>
+  <p class="causa" id="causa"></p>
+  <div class="info">
+    <div class="pill">Valor: <b id="precio"></b></div>
+    <div class="pill">Premio: <b id="premio"></b></div>
+    <div class="pill">Sorteo: <b id="fecha"></b></div>
+  </div>
+  <div class="barra"><i id="barra"></i></div>
+  <div class="progreso" id="progreso">Cargando…</div>
+</header>
+
+<div class="tools">
+  <input id="buscar" type="search" inputmode="numeric" placeholder="Buscar número (ej: 777)">
+  <div class="leyenda"><span>Libre</span><span class="r">Reservado</span><span class="p">Pagado</span></div>
+</div>
+
+<main><div class="grid" id="grid"></div></main>
+
+<dialog id="dlg"><div class="modal" id="modal"></div></dialog>
+
+<script>
+const C = window.RIFA;
+const clp = n => "$" + n.toLocaleString("es-CL");
+const pad = n => String(n).padStart(3, "0");
+document.getElementById("titulo").textContent = C.titulo;
+document.title = C.titulo;
+document.getElementById("causa").textContent = C.causa;
+document.getElementById("precio").textContent = clp(C.precio);
+document.getElementById("premio").textContent = C.premio;
+document.getElementById("fecha").textContent = C.fechaSorteo;
+
+const grid = document.getElementById("grid");
+const botones = [];
+for (let i = 0; i < 1000; i++) {
+  const b = document.createElement("button");
+  b.className = "n"; b.textContent = pad(i); b.dataset.n = i;
+  b.onclick = () => abrir(i);
+  grid.appendChild(b); botones.push(b);
+}
+
+async function cargar() {
+  try {
+    const r = await fetch("/api"); const d = await r.json();
+    const pag = new Set(d.pagados), tom = new Set(d.tomados);
+    botones.forEach((b, i) => {
+      b.classList.toggle("p", pag.has(i));
+      b.classList.toggle("r", tom.has(i) && !pag.has(i));
+      b.disabled = tom.has(i);
+    });
+    document.getElementById("barra").style.width = (tom.size / 10) + "%";
+    document.getElementById("progreso").textContent = `${tom.size} de 1000 números vendidos · ${1000 - tom.size} disponibles`;
+  } catch { document.getElementById("progreso").textContent = "No se pudo cargar, recarga la página"; }
+}
+
+document.getElementById("buscar").oninput = e => {
+  const q = e.target.value.trim();
+  botones.forEach(b => b.classList.toggle("oculto", q && !b.textContent.includes(q)));
+};
+
+const dlg = document.getElementById("dlg"), modal = document.getElementById("modal");
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+
+function abrir(n) {
+  const B = C.banco;
+  const filas = [["Titular",B.titular],["RUT",B.rut],["Banco",B.banco],["Tipo de cuenta",B.tipoCuenta],["N° de cuenta",B.numeroCuenta],["Email",B.email],["Monto",clp(C.precio)]].filter(([,v]) => v);
+  modal.innerHTML = `
+    <p class="big">${pad(n)}</p>
+    <p class="sub">1. Transfiere · 2. Pon tu nombre · 3. Aprieta "Ya pagué"</p>
+    <div class="banco">${filas.map(([k,v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("")}</div>
+    <button class="copiar" id="copiar">📋 Copiar datos bancarios</button>
+    <label for="nom">Tu nombre</label>
+    <input id="nom" autocomplete="name" placeholder="Nombre y apellido">
+    <label for="tel">Teléfono (para avisarte si ganas)</label>
+    <input id="tel" type="tel" autocomplete="tel" placeholder="+56 9 ...">
+    <div class="acciones">
+      <button class="btn sec" id="cancelar">Cancelar</button>
+      <button class="btn primario" id="pague">Ya pagué ✓</button>
+    </div>
+    <div class="msg" id="msg"></div>`;
+  dlg.showModal();
+  document.getElementById("cancelar").onclick = () => dlg.close();
+  document.getElementById("copiar").onclick = async e => {
+    await navigator.clipboard.writeText(filas.map(([k,v]) => `${k}: ${v}`).join("\n"));
+    e.target.textContent = "✓ Copiado";
+  };
+  document.getElementById("pague").onclick = () => reservar(n);
+}
+
+async function reservar(n) {
+  const nombre = document.getElementById("nom").value.trim();
+  const telefono = document.getElementById("tel").value.trim();
+  const msg = document.getElementById("msg"), btn = document.getElementById("pague");
+  if (nombre.length < 2) { msg.className = "msg error"; msg.textContent = "Escribe tu nombre"; return; }
+  btn.disabled = true; btn.textContent = "Guardando…";
+  try {
+    const r = await fetch("/api?accion=reservar", { method: "POST", headers: {"content-type":"application/json"}, body: JSON.stringify({ numero: n, nombre, telefono }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    modal.innerHTML = `<div class="exito"><p class="big">${pad(n)}</p><h2>¡Gracias, ${nombre.split(" ")[0]}! 💛</h2>
+      <p class="sub">Tu número quedó guardado. Se marcará como pagado cuando se confirme la transferencia.</p>
+      <button class="btn primario" style="width:100%" onclick="dlg.close()">Listo</button></div>`;
+    cargar();
+  } catch (e) {
+    msg.className = "msg error"; msg.textContent = e.message || "Error, intenta de nuevo";
+    btn.disabled = false; btn.textContent = "Ya pagué ✓"; cargar();
+  }
+}
+
+cargar(); setInterval(cargar, 20000);
+</script>
+</body>
+</html>
